@@ -1,9 +1,3 @@
-import argparse
-from models import build_model
-from main import get_args_parser
-
-from PIL import Image
-import requests
 import matplotlib.pyplot as plt
 
 

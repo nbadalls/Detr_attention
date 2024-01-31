@@ -1,11 +1,10 @@
 import sys
 sys.path.append("./attention_map")
 import torch
-from torch import nn
 from utility import transform, rescale_bboxes, plot_multi_head_feature_map
 from PIL import Image
 import requests
-from torch.nn.functional import dropout,linear,softmax
+from torch.nn.functional import linear,softmax
 torch.set_grad_enabled(False)
 import torch, math
 
@@ -41,7 +40,7 @@ class GetAttention:
         q = q.view(-1, 1 * 8, head_dim).transpose(1, 0)  # 8x100x32
         k = k.view(-1, 1 * 8, head_dim).transpose(1, 0)  # 8xnx32
         attn_output_weights = torch.bmm(q, k.transpose(-1, -2))  # 8x100xn
-        attn_output_weights /= math.sqrt(dim)
+        attn_output_weights /= math.sqrt(head_dim)
         attn_output_weights = softmax(attn_output_weights, dim=-1)
         return attn_output_weights[None]
 
@@ -53,6 +52,7 @@ class GetAttention:
 
         tgt, memory = [], []
         query_pos, pos = self.model.query_embed.weight, []
+
         qkv_weight = self.model.transformer.decoder.layers[-1].multihead_attn.in_proj_weight
         qkv_bias = self.model.transformer.decoder.layers[-1].multihead_attn.in_proj_bias
         hooks = [
@@ -63,7 +63,6 @@ class GetAttention:
             self.model.backbone.register_forward_hook(
                 lambda self, input, output: pos.append(output[1])),
         ]
-
         keep, bboxes_scaled, probas, im = self.model_inference()
         for hook in hooks:
             hook.remove()
@@ -78,11 +77,11 @@ class GetAttention:
         elif key_type == "content":
             key = memory
 
-        multi_attention = nn.MultiheadAttention(dim, 8, dropout=0)
-        multi_attention.in_proj_bias = qkv_bias
-        multi_attention.in_proj_weight = qkv_weight
-        _, attn_output_weights = multi_attention(query, key, memory,
-                                                average_attn_weights=False)
+        # multi_attention = nn.MultiheadAttention(dim, 8, dropout=0)
+        # multi_attention.in_proj_bias = qkv_bias
+        # multi_attention.in_proj_weight = qkv_weight
+        # _, attn_output_weights = multi_attention(query, key, memory,
+        #                                         average_attn_weights=False)
         # 手动实现attention计算，近似等于torch函数计算结果
-        # attn_output_weights = self.multi_head_attention(query, key, qkv_weight, qkv_bias, dim)
+        attn_output_weights = self.multi_head_attention(query, key, qkv_weight, qkv_bias, dim)
         plot_multi_head_feature_map(h, w, bboxes_scaled, attn_output_weights, keep, im, probas)
