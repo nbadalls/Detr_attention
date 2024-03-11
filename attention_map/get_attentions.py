@@ -73,8 +73,10 @@ class GetAttention:
         query = tgt + query_pos[:, None, :]  # 1x100x256
         key = memory + pos_embed  # 1xnx256
         if key_type == "position":
+            query = query_pos[:, None, :]
             key = pos_embed
         elif key_type == "content":
+            query = tgt
             key = memory
 
         # multi_attention = nn.MultiheadAttention(dim, 8, dropout=0)

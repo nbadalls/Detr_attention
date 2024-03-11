@@ -5,8 +5,9 @@ import argparse
 def get_args_parser():
     parser = argparse.ArgumentParser('plot attention', add_help=False)
     parser.add_argument('--type', default="detr", type=str, help="detr cd_detr")
-    parser.add_argument('--plot', default="combine", type=str, help="combine content position")
+    parser.add_argument('--plot', default="combine", type=str, help="position, content, combine")
     return parser
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser('Conditional DETR training and evaluation script', parents=[get_args_parser()])
